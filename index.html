@@ -1,0 +1,888 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Network Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a planning table with a route map on top; phone-first single column for teams, two-column console for the projector. */
+:root {
+  --bg: #e8edec;
+  --surface: #ffffff;
+  --sunk: #f2f5f4;
+  --ink: #142326;
+  --muted: #586a6d;
+  --line: #ccd6d5;
+  --accent: #0e6a70;     /* route teal */
+  --accent-ink: #ffffff;
+  --signal: #d9930a;     /* event amber */
+  --signal-soft: #faf0d7;
+  --good: #1f7d4f;
+  --bad: #b5372b;
+  --low: #2f8f63;        /* low competition */
+  --high: #c0532f;       /* high competition */
+  --map: #dfe7e6;
+  --f-display: "Arial Narrow", "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --f-body: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --f-mono: ui-monospace, Menlo, Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1719; --surface: #152225; --sunk: #111c1e; --ink: #e2ecec; --muted: #8fa3a5; --line: #26393c;
+  --accent: #4fb8be; --accent-ink: #071113; --signal: #efb43a; --signal-soft: #2a2412;
+  --good: #52c08a; --bad: #ee7d6e; --low: #58c08f; --high: #ee8a5f; --map: #1a2a2d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1719; --surface: #152225; --sunk: #111c1e; --ink: #e2ecec; --muted: #8fa3a5; --line: #26393c;
+  --accent: #4fb8be; --accent-ink: #071113; --signal: #efb43a; --signal-soft: #2a2412;
+  --good: #52c08a; --bad: #ee7d6e; --low: #58c08f; --high: #ee8a5f; --map: #1a2a2d; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.wrap.wide { max-width: 1180px; }
+h1, h2, h3 { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .02em; line-height: 1.02; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(36px, 8vw, 64px); font-weight: 800; }
+h2 { font-size: 30px; font-weight: 700; }
+h3 { font-size: 21px; font-weight: 700; }
+p { margin: 0; }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; border-bottom: 3px solid var(--ink); flex-wrap: wrap; }
+.brand { font-family: var(--f-display); font-weight: 800; font-size: 27px; text-transform: uppercase; letter-spacing: .03em; display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 26px; height: 26px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-family: var(--f-mono); font-size: 12px; padding: 4px 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 3px; white-space: nowrap; color: var(--ink); text-decoration: none; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel.sunk { background: var(--sunk); }
+.news { background: var(--signal-soft); border: 1px solid var(--signal); border-left: 8px solid var(--signal); border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.event { border: 2px solid var(--ink); border-radius: 4px; padding: 18px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); border-top: 10px solid var(--signal); }
+.stepno { display: flex; align-items: baseline; gap: 10px; }
+.stepno .n { font-family: var(--f-mono); font-size: 13px; color: var(--accent-ink); background: var(--accent); padding: 2px 7px; border-radius: 3px; }
+
+.btn { font: 600 16px var(--f-body); border: 2px solid var(--ink); background: var(--surface); color: var(--ink); padding: 11px 16px; border-radius: 4px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.big { font-size: 18px; padding: 14px 18px; }
+.btn.ghost { border-color: var(--line); }
+.btn.sm { padding: 3px 9px; font-size: 13px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 160px; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+
+label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 500; }
+input[type=text], select { font: 500 17px var(--f-mono); padding: 10px 12px; border: 2px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); width: 100%; min-width: 0; }
+select { font-size: 14px; font-family: var(--f-body); }
+input[type=text]:focus, select:focus { border-color: var(--accent); outline: none; }
+.err { color: var(--bad); font-weight: 500; font-size: 15px; }
+
+/* Cards for markets and sites */
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 14px; }
+.facts dt { color: var(--muted); } .facts dd { margin: 0; text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.badge { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 3px; color: #fff; white-space: nowrap; }
+.badge.low { background: var(--low); color: var(--accent-ink); } .badge.high { background: var(--high); color: var(--accent-ink); }
+.badge.plain { background: none; color: var(--muted); border: 1px solid var(--line); }
+.toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.tg { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 15px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 4px; cursor: pointer; user-select: none; }
+.tg input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.tg.checked { border-color: var(--accent); }
+.util { height: 8px; background: var(--sunk); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.util i { display: block; height: 100%; background: var(--accent); }
+.util.over i { background: var(--bad); }
+
+.lane { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.lane:last-child { border-bottom: 0; }
+.lane .info { grid-column: 2; font-size: 13px; color: var(--muted); font-family: var(--f-mono); }
+@media (max-width: 460px) { .lane { grid-template-columns: minmax(0, 1fr); } .lane .info { grid-column: 1; } }
+
+.calc { font-family: var(--f-mono); font-size: 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-variant-numeric: tabular-nums; }
+.calc .tot { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 600; font-size: 16px; }
+.warn { background: var(--signal-soft); border: 1px solid var(--signal); border-radius: 4px; padding: 10px 12px; font-size: 14px; }
+.warn ul { margin: 4px 0 0; padding-left: 18px; }
+
+.map { background: var(--map); border-radius: 4px; border: 1px solid var(--line); }
+.map svg { display: block; width: 100%; height: auto; }
+svg text { font-family: var(--f-mono); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; background: var(--k); vertical-align: -1px; border-radius: var(--r, 0); }
+
+.code-big { font-family: var(--f-mono); font-weight: 600; font-size: clamp(56px, 12vw, 130px); line-height: 1; letter-spacing: .06em; }
+.timer { font-family: var(--f-mono); font-size: 54px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.timer.low { color: var(--bad); }
+.report { font-family: var(--f-mono); font-size: clamp(34px, 10vw, 54px); font-weight: 600; letter-spacing: .06em; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+.dash td.n { font-size: 15px; }
+.dash tr.top td { font-weight: 600; }
+.empty { color: var(--muted); }
+
+.tabs { display: flex; border-bottom: 2px solid var(--line); overflow-x: auto; }
+.tab { font: 600 15px var(--f-body); background: none; border: 0; border-bottom: 3px solid transparent; margin-bottom: -2px; padding: 10px 14px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tab[aria-selected=true] { color: var(--ink); border-bottom-color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.hero { padding-block: 26px 4px; display: flex; flex-direction: column; gap: 14px; }
+.hero p { max-width: 62ch; font-size: 18px; }
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 560px) { .choices { grid-template-columns: minmax(0, 1fr); } }
+.choice { text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 18px; cursor: pointer; border: 2px solid var(--ink); background: var(--surface); color: var(--ink); border-radius: 4px; font: inherit; }
+.choice:hover { background: var(--sunk); }
+ol.steps, ul.notes { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+.hbars { display: flex; flex-direction: column; gap: 6px; }
+.hb { display: grid; grid-template-columns: 70px minmax(0, 1fr) 90px; gap: 8px; align-items: center; font-family: var(--f-mono); font-size: 13px; }
+.hb .track { height: 18px; background: var(--sunk); border-radius: 2px; position: relative; overflow: hidden; }
+.hb .track i { position: absolute; top: 0; bottom: 0; background: var(--accent); }
+.hb .track i.neg { background: var(--bad); }
+.hb .v { text-align: right; font-variant-numeric: tabular-nums; }
+.flash { animation: none; }
+@media (prefers-reduced-motion: no-preference) { .flash { animation: fl 1.2s ease-out; } @keyframes fl { from { background: var(--signal-soft); } to { background: transparent; } } }
+</style>
+
+<div id="app"></div>
+
+<script>
+// ===== Network Builder engine (pure, no DOM) =====
+var G = {
+  years: 4,
+  price: 60,          // per unit
+  freight: 0.012,     // $ per unit per road mile
+  open: 300000,       // one-time cost to open a site (paid the first year it is open)
+  expCap: 1.5,        // expanded site capacity multiplier
+  expCost: 0.4,       // expansion adds this fraction of the site's fixed cost, every year it is expanded
+  share: { low: 0.55, high: 0.30 },
+  push: 0.12,         // extra share with a promotion push
+  pushCost: 0.6,      // push costs this fraction of the market's base marketing budget
+  speed: [ { max: 500, label: "Next day", pen: 0 }, { max: 1000, label: "2 days", pen: 0.05 }, { max: 99999, label: "3+ days", pen: 0.12 } ]
+};
+var MARKETS = [
+  { id: "NY",  name: "New York",    lat: 40.71, lon: -74.01,  pot: 90000, comp: "high", mkt: 340000 },
+  { id: "LA",  name: "Los Angeles", lat: 34.05, lon: -118.24, pot: 80000, comp: "high", mkt: 320000 },
+  { id: "CHI", name: "Chicago",     lat: 41.88, lon: -87.63,  pot: 50000, comp: "low",  mkt: 300000 },
+  { id: "DAL", name: "Dallas",      lat: 32.78, lon: -96.80,  pot: 45000, comp: "high", mkt: 220000 },
+  { id: "ATL", name: "Atlanta",     lat: 33.75, lon: -84.39,  pot: 35000, comp: "low",  mkt: 200000 },
+  { id: "SEA", name: "Seattle",     lat: 47.61, lon: -122.33, pot: 25000, comp: "low",  mkt: 160000 },
+  { id: "DEN", name: "Denver",      lat: 39.74, lon: -104.99, pot: 30000, comp: "low",  mkt: 170000, from: 3 }
+];
+var SITES = [
+  { id: "RNO", name: "Reno",        st: "NV", lat: 39.53, lon: -119.81, fixed: 500000, cap: 60000, unit: 20 },
+  { id: "PHX", name: "Phoenix",     st: "AZ", lat: 33.45, lon: -112.07, fixed: 550000, cap: 70000, unit: 19 },
+  { id: "MKC", name: "Kansas City", st: "MO", lat: 39.10, lon: -94.58,  fixed: 600000, cap: 90000, unit: 21 },
+  { id: "MEM", name: "Memphis",     st: "TN", lat: 35.15, lon: -90.05,  fixed: 580000, cap: 80000, unit: 20 },
+  { id: "CMH", name: "Columbus",    st: "OH", lat: 39.96, lon: -83.00,  fixed: 650000, cap: 70000, unit: 22 },
+  { id: "ABE", name: "Allentown",   st: "PA", lat: 40.60, lon: -75.49,  fixed: 700000, cap: 70000, unit: 24, dx: -14, dy: -16, lp: "above" },
+  { id: "DFW", name: "Fort Worth",  st: "TX", lat: 32.75, lon: -97.33,  fixed: 560000, cap: 80000, unit: 20, from: 2, dx: -12, dy: 16 }
+];
+var STATES = { NV: "Nevada", AZ: "Arizona", MO: "Missouri", TN: "Tennessee", OH: "Ohio", PA: "Pennsylvania", TX: "Texas" };
+function availM(y) { return MARKETS.filter(function (m) { return !(m.from > y); }); }
+function availS(y) { return SITES.filter(function (s) { return !(s.from > y); }); }
+var YEARS = [
+  { news: "Launch year. Analysts expect demand in line with the market forecasts below.",
+    title: "Smooth launch", event: "No surprises. Every market came in on forecast. Next year a new candidate site opens in Fort Worth, Texas, and every promotion push must be bought again.", fx: [] },
+  { news: "Diesel futures have been climbing for three months and carriers are hinting at fuel surcharges.",
+    title: "Fuel shock", event: "Carriers add a fuel surcharge. Freight now costs 35% more per mile, from this year on. Next year a new market opens: Denver, Colorado.",
+    fx: [ { type: "freight", mult: 1.35 } ] },
+  { news: "A big-box retailer announced it will expand its own brand across the Southeast.",
+    title: "Rival enters, Seattle booms", event: "The rival opens in Atlanta, which is now a high-competition market. Meanwhile, a tech hiring boom grows Seattle's market by 60%.",
+    fx: [ { type: "comp", m: "ATL", to: "high" }, { type: "demand", m: "SEA", mult: 1.6 } ] },
+  { news: "Warehouse wages are rising fast in Nevada (Reno) and Arizona (Phoenix) as new fulfillment centers compete for workers.",
+    title: "Western wage squeeze", event: "Reno, Nevada and Phoenix, Arizona labor costs jump by $6 a unit. A national retail partner also lifts New York demand by 20%.",
+    fx: [ { type: "cost", s: ["RNO", "PHX"], add: 6 }, { type: "demand", m: "NY", mult: 1.2 } ] }
+];
+
+function miles(a, b) {
+  var R = 3959, t = Math.PI / 180;
+  var dLat = (b.lat - a.lat) * t, dLon = (b.lon - a.lon) * t;
+  var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * t) * Math.cos(b.lat * t) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return Math.round(2 * R * Math.asin(Math.sqrt(x)) * 1.2 / 10) * 10; // road miles ≈ 1.2 × straight line
+}
+var DIST = {};
+SITES.forEach(function (s) { DIST[s.id] = {}; MARKETS.forEach(function (m) { DIST[s.id][m.id] = miles(s, m); }); });
+function speedOf(mi) { for (var i = 0; i < G.speed.length; i++) if (mi <= G.speed[i].max) return G.speed[i]; }
+function mById(id) { return MARKETS.filter(function (m) { return m.id === id; })[0]; }
+function sById(id) { return SITES.filter(function (s) { return s.id === id; })[0]; }
+
+// Environment = base data with every effect up to and including year y applied
+function envFor(y) {
+  var e = { freight: G.freight, demand: {}, comp: {}, cost: {}, year: y };
+  MARKETS.forEach(function (m) { e.demand[m.id] = 1; e.comp[m.id] = m.comp; });
+  SITES.forEach(function (s) { e.cost[s.id] = s.unit; });
+  for (var i = 0; i < y; i++) YEARS[i].fx.forEach(function (f) {
+    if (f.type === "freight") e.freight *= f.mult;
+    if (f.type === "comp") e.comp[f.m] = f.to;
+    if (f.type === "demand") e.demand[f.m] *= f.mult;
+    if (f.type === "cost") f.s.forEach(function (id) { e.cost[id] += f.add; });
+  });
+  return e;
+}
+
+// Decision: { markets: {NY:{on:true,push:false},...}, sites: {RNO:true,...}, assign: {NY:"ABE",...} }
+function blankDecision() {
+  var d = { markets: {}, sites: {}, expand: {}, assign: {}, manual: {} };
+  MARKETS.forEach(function (m) { d.markets[m.id] = { on: false, push: false }; });
+  SITES.forEach(function (s) { d.sites[s.id] = false; d.expand[s.id] = false; });
+  return d;
+}
+function capOf(d, s) { return d.expand && d.expand[s.id] ? Math.round(s.cap * G.expCap) : s.cap; }
+function samePlan(a, b) {
+  if (!a || !b) return false;
+  var same = true;
+  MARKETS.forEach(function (m) { if (!!a.markets[m.id].on !== !!b.markets[m.id].on || !!a.markets[m.id].push !== !!b.markets[m.id].push) same = false; if (a.markets[m.id].on && a.assign[m.id] !== b.assign[m.id]) same = false; });
+  SITES.forEach(function (s) { if (!!a.sites[s.id] !== !!b.sites[s.id] || !!(a.expand && a.expand[s.id]) !== !!(b.expand && b.expand[s.id])) same = false; });
+  return same;
+}
+function nearestOpen(d, mid) {
+  var best = null;
+  SITES.forEach(function (s) { if (d.sites[s.id] && (!best || DIST[s.id][mid] < DIST[best][mid])) best = s.id; });
+  return best;
+}
+function fixAssign(d) {
+  MARKETS.forEach(function (m) {
+    var a = d.assign[m.id];
+    if (!d.markets[m.id].on) return;
+    var manual = d.manual && d.manual[m.id];
+    if (!a || !d.sites[a] || !manual) { d.assign[m.id] = nearestOpen(d, m.id); if (d.manual) delete d.manual[m.id]; }
+  });
+  return d;
+}
+
+// Evaluate one year. everOpened = list of sites opened in earlier years (no opening cost again).
+function evaluate(d, env, everOpened) {
+  everOpened = everOpened || [];
+  var rows = [], load = {}, wanted = {};
+  SITES.forEach(function (s) { load[s.id] = 0; });
+  MARKETS.forEach(function (m) {
+    var r = { id: m.id, name: m.name, on: !!d.markets[m.id].on && !(m.from > env.year), push: !!d.markets[m.id].push, site: null, miles: 0, speed: null,
+      comp: env.comp[m.id], pot: Math.round(m.pot * env.demand[m.id]), share: 0, demand: 0, sold: 0, lost: 0,
+      revenue: 0, prod: 0, freight: 0, mkt: 0, contrib: 0 };
+    if (r.on) {
+      r.mkt = m.mkt + (r.push ? Math.round(m.mkt * G.pushCost) : 0);
+      var a0 = d.assign[m.id];
+      r.site = a0 && d.sites[a0] && !(sById(a0).from > env.year) ? a0 : null;
+      if (!r.site) { var bst = null; SITES.forEach(function (s) { if (d.sites[s.id] && !(s.from > env.year) && (!bst || DIST[s.id][m.id] < DIST[bst][m.id])) bst = s.id; }); r.site = bst; }
+      if (r.site) {
+        r.miles = DIST[r.site][m.id]; r.speed = speedOf(r.miles);
+        r.share = Math.max(0, G.share[r.comp] + (r.push ? G.push : 0) - r.speed.pen);
+        r.demand = Math.round(r.pot * r.share);
+        load[r.site] += r.demand;
+      }
+    }
+    rows.push(r);
+  });
+  // Capacity: an overloaded site ships the same fraction to every market it serves
+  var fill = {};
+  SITES.forEach(function (s) { var c = capOf(d, s); fill[s.id] = load[s.id] > c ? c / load[s.id] : 1; });
+  var t = { revenue: 0, prod: 0, freight: 0, mkt: 0, fixed: 0, opening: 0, sold: 0, demand: 0, lost: 0 };
+  rows.forEach(function (r) {
+    if (r.on && r.site) {
+      r.sold = Math.floor(r.demand * fill[r.site]);
+      r.lost = r.demand - r.sold;
+      r.revenue = r.sold * G.price;
+      r.prod = r.sold * env.cost[r.site];
+      r.freight = Math.round(r.sold * r.miles * env.freight);
+    }
+    r.contrib = r.revenue - r.prod - r.freight - r.mkt;
+    ["revenue", "prod", "freight", "mkt", "sold", "demand", "lost"].forEach(function (k) { t[k] += r[k]; });
+  });
+  var sites = SITES.map(function (s) {
+    var on = !!d.sites[s.id] && !(s.from > env.year), isNew = on && everOpened.indexOf(s.id) < 0, cap = capOf(d, s), exp = on && d.expand && d.expand[s.id];
+    if (on) { t.fixed += s.fixed + (exp ? Math.round(s.fixed * G.expCost) : 0); if (isNew) t.opening += G.open; }
+    return { id: s.id, on: on, isNew: isNew, expanded: !!exp, load: load[s.id], cap: cap, util: on ? Math.min(load[s.id], cap) / cap : 0, over: load[s.id] > cap };
+  });
+  t.profit = t.revenue - t.prod - t.freight - t.mkt - t.fixed - t.opening;
+  return { rows: rows, sites: sites, t: t };
+}
+
+function newTeamGame() { return { y: 1, opened: [], hist: [], total: 0, done: false }; }
+function playYear(st, d) {
+  if (!d.expand) { d.expand = {}; SITES.forEach(function (s) { d.expand[s.id] = false; }); }
+  fixAssign(d);
+  var res = evaluate(d, envFor(st.y), st.opened);
+  SITES.forEach(function (s) { if (d.sites[s.id] && st.opened.indexOf(s.id) < 0) st.opened.push(s.id); });
+  st.hist.push({ y: st.y, d: JSON.parse(JSON.stringify(d)), res: res, changed: st.hist.length ? !samePlan(st.hist[st.hist.length - 1].d, d) : true });
+  st.total += res.t.profit;
+  st.y += 1;
+  if (st.y > G.years) st.done = true;
+  return res;
+}
+
+// ---- codes ----
+function fnv(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
+function normCode(c) { return String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+function roundCode(game, y) { return String(100 + (fnv("nb|" + normCode(game) + "|" + y) % 900)); }
+var B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // Crockford: no I, L, O, U
+// Report code packs team (6 bits), year (3), profit in $1k + 8192 (14), plan-changed flag (1), checksum (16) = 40 bits = 8 chars
+function reportCode(game, team, y, profit, changed) {
+  var pk = Math.max(0, Math.min(16383, Math.round(profit / 1000) + 8192)), ch = changed ? 1 : 0;
+  var ck = fnv("rep|" + normCode(game) + "|" + team + "|" + y + "|" + pk + "|" + ch) % 65536;
+  var n = (((BigInt(team) * 8n + BigInt(y)) * 16384n + BigInt(pk)) * 2n + BigInt(ch)) * 65536n + BigInt(ck);
+  var s = ""; for (var i = 0; i < 8; i++) { s = B32[Number(n % 32n)] + s; n = n / 32n; }
+  return s.slice(0, 4) + "-" + s.slice(4);
+}
+function readReport(game, code) {
+  var c = normCode(code).replace(/O/g, "0").replace(/[IL]/g, "1");
+  if (c.length !== 8) return null;
+  var n = 0n;
+  for (var i = 0; i < 8; i++) { var v = B32.indexOf(c[i]); if (v < 0) return null; n = n * 32n + BigInt(v); }
+  var ck = Number(n % 65536n); n = n / 65536n;
+  var ch = Number(n % 2n); n = n / 2n;
+  var pk = Number(n % 16384n); n = n / 16384n;
+  var y = Number(n % 8n); var team = Number(n / 8n);
+  if (fnv("rep|" + normCode(game) + "|" + team + "|" + y + "|" + pk + "|" + ch) % 65536 !== ck) return null;
+  if (team < 1 || team > 60 || y < 1 || y > G.years) return null;
+  return { team: team, y: y, profit: (pk - 8192) * 1000, changed: ch === 1 };
+}
+
+
+// ===================== UI =====================
+var $app = document.getElementById("app");
+function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function money(n) { var a = Math.abs(Math.round(n)); return (n < 0 ? "−$" : "$") + a.toLocaleString("en-US"); }
+function kmoney(n) { var a = Math.abs(n) / 1000; return (n < 0 ? "−$" : "$") + (a >= 1000 ? (a / 1000).toFixed(2) + "M" : Math.round(a) + "k"); }
+function fmt(n) { return Math.round(n).toLocaleString("en-US"); }
+function pct(x) { return Math.round(x * 100) + "%"; }
+function load(k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function forget(k) { try { localStorage.removeItem(k); } catch (e) {} }
+function on(id, ev, fn) { var el = document.getElementById(id); if (el) el.addEventListener(ev, fn); }
+
+var TEAM = load("nb-team");
+var HOST = load("nb-host");
+var hostTab = "run", timerHandle = null;
+function persistTeam() { save("nb-team", TEAM); }
+function persistHost() { save("nb-host", HOST); }
+function newHostCode() { var A = "ABCDEFGHJKMNPQRSTVWXYZ", c = ""; for (var i = 0; i < 4; i++) c += A[Math.floor(Math.random() * A.length)]; return c; }
+if (!HOST) HOST = { game: newHostCode(), y: 1, revealed: false, timerEnd: null, results: {} };
+
+function route() {
+  var h = (location.hash || "").replace("#", "");
+  clearInterval(timerHandle);
+  if (h === "host") return renderHost();
+  if (h === "team") return TEAM ? renderTeam() : renderJoin();
+  return renderHome();
+}
+window.addEventListener("hashchange", route);
+function go(h) { if (location.hash === "#" + h) route(); else location.hash = h; }
+
+var LOGO = '<svg viewBox="0 0 26 26" aria-hidden="true"><path d="M5 20 L13 6 L21 18" fill="none" stroke="var(--accent)" stroke-width="2.5"/><rect x="2" y="17" width="6" height="6" fill="var(--ink)"/><circle cx="13" cy="6" r="3.5" fill="var(--signal)"/><circle cx="21" cy="18" r="3.5" fill="var(--signal)"/></svg>';
+function topbar(right) { return '<div class="bar"><div class="brand">' + LOGO + 'Network Builder</div><div class="chips">' + (right || "") + '</div></div>'; }
+
+// ---------- Map ----------
+var MX = function (lon) { return 18 + (lon + 125.5) / 59 * 570; };
+var MY = function (lat) { return 14 + (49.8 - lat) / 25.8 * 316; };
+// Simplified outline of the contiguous United States (lon, lat)
+var US = [[-124.7,48.4],[-122.8,48.9],[-95.2,49.0],[-95.1,49.4],[-94.6,48.7],[-92.0,48.3],[-89.5,48.0],[-88.3,47.3],[-84.9,46.9],[-83.5,46.0],[-82.5,45.3],[-82.4,43.0],[-83.1,42.1],[-82.7,41.7],[-80.5,42.3],[-79.0,42.9],[-79.1,43.3],[-76.8,43.6],[-74.7,45.0],[-71.5,45.0],[-70.3,46.0],[-69.2,47.4],[-67.8,47.1],[-67.0,44.8],[-68.5,44.3],[-70.2,43.6],[-70.7,42.7],[-70.0,41.8],[-71.4,41.5],[-72.0,41.3],[-73.9,40.6],[-74.0,39.6],[-75.0,38.9],[-75.5,37.5],[-76.0,36.9],[-75.7,35.2],[-78.0,33.9],[-79.9,32.8],[-81.4,30.9],[-80.1,26.7],[-80.4,25.2],[-81.8,25.9],[-82.6,27.9],[-84.0,30.1],[-85.7,30.2],[-88.0,30.4],[-89.4,29.3],[-90.6,29.1],[-93.8,29.7],[-97.2,27.9],[-97.1,26.0],[-99.0,26.4],[-101.4,29.8],[-104.5,29.6],[-106.5,31.8],[-108.2,31.3],[-111.1,31.3],[-114.7,32.7],[-117.1,32.5],[-118.5,34.0],[-120.6,34.6],[-121.9,36.6],[-122.5,37.8],[-123.8,39.6],[-124.2,41.8],[-124.0,44.6],[-124.0,46.2]];
+var REGIONS = [ { name: "WEST", lon: -116.5, lat: 42.5 }, { name: "MIDWEST", lon: -91, lat: 44.5 }, { name: "SOUTH", lon: -88.5, lat: 31.2 }, { name: "NORTHEAST", lon: -72.3, lat: 44.6 } ];
+function mapSVG(d, env, opts) {
+  opts = opts || {};
+  var g = "", y = env ? env.year : G.years;
+  g += '<path d="M' + US.map(function (p) { return MX(p[0]).toFixed(1) + " " + MY(p[1]).toFixed(1); }).join(" L") + ' Z" fill="var(--surface)" fill-opacity=".55" stroke="var(--muted)" stroke-width="1.2" stroke-linejoin="round"/>';
+  REGIONS.forEach(function (r) { g += '<text x="' + MX(r.lon) + '" y="' + MY(r.lat) + '" font-size="9" letter-spacing="2" fill="var(--muted)" fill-opacity=".7" text-anchor="middle">' + r.name + '</text>'; });
+  if (d) availM(y).forEach(function (m) {
+    var a = d.markets[m.id].on && d.assign[m.id] && d.sites[d.assign[m.id]] ? sById(d.assign[m.id]) : null;
+    if (a) {
+      var sp = speedOf(DIST[a.id][m.id]);
+      g += '<line x1="' + (MX(a.lon) + (a.dx || 0)) + '" y1="' + (MY(a.lat) + (a.dy || 0)) + '" x2="' + MX(m.lon) + '" y2="' + MY(m.lat) + '" stroke="var(--accent)" stroke-width="' + (sp.pen === 0 ? 3 : 2) + '"' + (sp.pen >= 0.12 ? ' stroke-dasharray="3 5"' : sp.pen > 0 ? ' stroke-dasharray="8 4"' : '') + '/>';
+    }
+  });
+  availM(y).forEach(function (m) {
+    var r = 7 + Math.sqrt(m.pot * (env ? env.demand[m.id] : 1)) / 22;
+    var served = d && d.markets[m.id].on, comp = env ? env.comp[m.id] : m.comp, isNew = m.from === y;
+    g += '<circle cx="' + MX(m.lon) + '" cy="' + MY(m.lat) + '" r="' + r.toFixed(1) + '" fill="var(--' + comp + ')" fill-opacity="' + (served || !d ? 0.85 : 0.22) + '" stroke="var(--' + comp + ')" stroke-width="2"' + (isNew ? ' stroke-dasharray="4 3"' : '') + '/>';
+    var left = m.id === "NY", lx = MX(m.lon) + (left ? -r - 4 : r + 4), anc = left ? "end" : "start";
+    g += '<text x="' + lx + '" y="' + (MY(m.lat) - 2) + '" font-size="12" font-weight="600" fill="var(--ink)" text-anchor="' + anc + '">' + m.name + (isNew ? ' (new)' : '') + '</text>';
+    g += '<text x="' + lx + '" y="' + (MY(m.lat) + 11) + '" font-size="10" fill="var(--muted)" text-anchor="' + anc + '">' + Math.round(m.pot * (env ? env.demand[m.id] : 1) / 1000) + 'k</text>';
+  });
+  availS(y).forEach(function (s) {
+    var o = d && d.sites[s.id], ex = o && d.expand && d.expand[s.id], isNew = s.from === y, sx = MX(s.lon) + (s.dx || 0), sy = MY(s.lat) + (s.dy || 0);
+    g += '<rect x="' + (sx - 7) + '" y="' + (sy - 7) + '" width="14" height="14" fill="' + (o ? "var(--ink)" : "var(--surface)") + '" stroke="var(--ink)" stroke-width="2"' + (isNew ? ' stroke-dasharray="3 2"' : '') + '/>';
+    if (ex) g += '<rect x="' + (sx - 10) + '" y="' + (sy - 10) + '" width="20" height="20" fill="none" stroke="var(--ink)" stroke-width="1.5"/>';
+    var lab = s.name + ', ' + s.st + (isNew ? ' (new)' : '');
+    if (s.lp === "above") g += '<text x="' + sx + '" y="' + (sy - 12) + '" font-size="10" fill="var(--ink)" text-anchor="middle">' + lab + '</text>';
+    else if (s.lp === "left") g += '<text x="' + (sx - 11) + '" y="' + (sy + 4) + '" font-size="10" fill="var(--ink)" text-anchor="end">' + lab + '</text>';
+    else g += '<text x="' + sx + '" y="' + (sy + 21) + '" font-size="10" fill="var(--ink)" text-anchor="middle">' + lab + '</text>';
+  });
+  return '<div class="map"><svg viewBox="0 0 600 340" role="img" aria-label="Map of the United States with markets, candidate sites and delivery lanes">' + g + '</svg></div>' +
+    '<div class="legend"><span style="--k: var(--low); --r: 50%">Low competition</span><span style="--k: var(--high); --r: 50%">High competition</span><span style="--k: var(--ink)">Open site (double border = expanded)</span><span style="--k: var(--accent)">Lane (solid = next day, dashed = slower)</span></div>';
+}
+
+// ---------- Home ----------
+function renderHome() {
+  $app.innerHTML = '<div class="wrap">' + topbar() +
+    '<div class="hero"><span class="label">Facility location and distribution game · 4 years · teams of 5 to 7</span>' +
+    '<h1>Pick the markets. Place the warehouses. Draw the lanes.</h1>' +
+    '<p>Your team launches Trailhead, a $60 outdoor cooler, across the U.S. Marketing chooses which cities to sell in and how hard to push. Operations chooses where to open warehouses and which warehouse ships to which city. Far-away warehouses mean slower delivery, and slower delivery loses customers.</p></div>' +
+    mapSVG(null, null) +
+    '<div class="choices">' +
+      '<button class="choice" id="go-team"><span class="label">Students</span><h2>Join as a team</h2><span class="muted">One phone or laptop per team. You need your team number and the game code on the screen.</span></button>' +
+      '<button class="choice" id="go-host"><span class="label">Instructor</span><h2>Run the game</h2><span class="muted">Projector console with round codes, timer, a profit dashboard for every team and a debrief.</span></button>' +
+    '</div></div>';
+  on("go-team", "click", function () { go("team"); });
+  on("go-host", "click", function () { go("host"); });
+}
+
+// ---------- Team: join ----------
+function renderJoin(err) {
+  $app.innerHTML = '<div class="wrap">' + topbar('<a class="chip" href="#">Back</a>') +
+    '<div class="panel"><h2>Join the game</h2>' +
+    '<label class="field" for="j-team">Team number (from your instructor)<input type="text" id="j-team" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="1 to 60"></label>' +
+    '<label class="field" for="j-code">Game code (on the big screen)<input type="text" id="j-code" maxlength="6" autocomplete="off" placeholder="e.g. KQTM" style="text-transform:uppercase"></label>' +
+    (err ? '<p class="err">' + esc(err) + '</p>' : '') +
+    '<button class="btn primary big" id="j-go">Start year 1</button>' +
+    '<p class="small muted">Trying it alone? <button class="btn ghost sm" id="j-practice">Practice without a facilitator</button></p></div>' +
+    '<div class="panel sunk"><h3>How a year works</h3><ol class="steps">' +
+    '<li><b>Markets:</b> choose which cities to sell in, and whether to pay for a promotion push.</li>' +
+    '<li><b>Facilities:</b> choose which warehouses to open. Opening costs $' + fmt(G.open) + ' once, then a fixed cost every year.</li>' +
+    '<li><b>Distribution:</b> choose which warehouse serves each city.</li>' +
+    '<li>Lock your plan, wait for the round code, then see what happened. Show your report code to your instructor.</li>' +
+    '<li>Each year brings new conditions, new options and a fresh marketing budget, so revisit all three decisions every year.</li></ol></div></div>';
+  on("j-go", "click", function () {
+    var t = parseInt(document.getElementById("j-team").value, 10), c = normCode(document.getElementById("j-code").value);
+    if (!(t >= 1 && t <= 60)) return renderJoin("Enter a team number from 1 to 60.");
+    if (c.length < 3) return renderJoin("Enter the game code shown on the big screen.");
+    startTeam(t, c, false);
+  });
+  on("j-practice", "click", function () { startTeam(1, "PRACTICE", true); });
+}
+function startTeam(n, game, practice) {
+  TEAM = { n: n, game: game, practice: practice, phase: "decide", st: newTeamGame(), d: blankDecision(), last: null };
+  persistTeam(); renderTeam();
+}
+
+// ---------- Team: play ----------
+function teamBar() {
+  var st = TEAM.st;
+  return topbar('<span class="chip">Team <b>' + TEAM.n + '</b></span><span class="chip">Year <b>' + Math.min(st.y, G.years) + '</b>/' + G.years + '</span><span class="chip">Profit <b>' + kmoney(st.total) + '</b></span>');
+}
+function renderTeam() {
+  if (!TEAM) return renderJoin();
+  if (TEAM.phase === "decide") return renderDecide();
+  if (TEAM.phase === "locked") return renderLocked();
+  if (TEAM.phase === "result") return renderResult();
+  return renderFinal();
+}
+
+function renderDecide() {
+  var st = TEAM.st, d = TEAM.d, y = st.y, Y = YEARS[y - 1];
+  var env = envFor(y - 1); env.year = y; // what the team knows: every effect revealed so far; options available this year
+  fixAssign(d);
+  var prev = st.hist.length ? st.hist[st.hist.length - 1] : null;
+
+  var mCards = availM(y).map(function (m) {
+    var md = d.markets[m.id], comp = env.comp[m.id], pot = Math.round(m.pot * env.demand[m.id]);
+    return '<div class="card' + (md.on ? " on" : "") + '"><div class="head"><h3>' + m.name + (m.from === y ? ' <span class="badge" style="background:var(--signal);color:#000">New</span>' : '') + '</h3><span class="badge ' + comp + '">' + comp + ' competition</span></div>' +
+      '<dl class="facts"><dt>Market potential</dt><dd>' + fmt(pot) + ' units</dd>' +
+      '<dt>Your share (next-day delivery)</dt><dd>' + pct(G.share[comp]) + (md.push ? ' + ' + pct(G.push) : '') + '</dd>' +
+      '<dt>Marketing budget</dt><dd>' + money(m.mkt) + '</dd>' +
+      '<dt>Promotion push</dt><dd>+' + money(Math.round(m.mkt * G.pushCost)) + '</dd></dl>' +
+      '<div class="toggles"><label class="tg' + (md.on ? " checked" : "") + '"><input type="checkbox" data-mon="' + m.id + '"' + (md.on ? " checked" : "") + '> Sell here</label>' +
+      '<label class="tg' + (md.push ? " checked" : "") + '"' + (md.on ? "" : ' style="opacity:.5"') + '><input type="checkbox" data-mpush="' + m.id + '"' + (md.push ? " checked" : "") + (md.on ? "" : " disabled") + '> Push (+' + pct(G.push) + ' share)</label></div></div>';
+  }).join("");
+
+  var sCards = availS(y).map(function (s) {
+    var o = d.sites[s.id], ex = !!d.expand[s.id], built = st.opened.indexOf(s.id) >= 0, cost = env.cost[s.id];
+    return '<div class="card' + (o ? " on" : "") + '"><div class="head"><h3>' + s.name + ', ' + s.st + (s.from === y ? ' <span class="badge" style="background:var(--signal);color:#000">New</span>' : '') + '</h3>' + (built ? '<span class="badge plain">built</span>' : '') + '</div>' +
+      '<p class="small muted" style="margin-top:-4px">' + (STATES[s.st] || s.st) + '</p>' +
+      '<dl class="facts"><dt>Fixed cost / year</dt><dd>' + money(s.fixed) + '</dd>' +
+      '<dt>Opening cost</dt><dd>' + (built ? "paid" : money(G.open)) + '</dd>' +
+      '<dt>Capacity</dt><dd>' + fmt(s.cap) + (ex ? ' → <b>' + fmt(Math.round(s.cap * G.expCap)) + '</b>' : '') + ' units</dd>' +
+      '<dt>Expansion (+' + pct(G.expCap - 1) + ' capacity)</dt><dd>+' + money(Math.round(s.fixed * G.expCost)) + ' / yr</dd>' +
+      '<dt>Handling cost</dt><dd' + (cost !== s.unit ? ' class="neg"' : '') + '>$' + cost + ' / unit</dd></dl>' +
+      '<div class="util" id="u-' + s.id + '"><i style="width:0"></i></div><div class="small muted mono" id="ut-' + s.id + '"></div>' +
+      '<div class="toggles"><label class="tg' + (o ? " checked" : "") + '"><input type="checkbox" data-site="' + s.id + '"' + (o ? " checked" : "") + '> Open this site</label>' +
+      '<label class="tg' + (ex ? " checked" : "") + '"' + (o ? "" : ' style="opacity:.5"') + '><input type="checkbox" data-expand="' + s.id + '"' + (ex ? " checked" : "") + (o ? "" : " disabled") + '> Expand</label></div></div>';
+  }).join("");
+
+  var served = availM(y).filter(function (m) { return d.markets[m.id].on; });
+  var openSites = availS(y).filter(function (s) { return d.sites[s.id]; });
+  var lanes = !served.length ? '<p class="muted">Choose at least one market in step 1.</p>' : !openSites.length ? '<p class="muted">Open at least one site in step 2.</p>' :
+    served.map(function (m) {
+      var opts = openSites.map(function (s) {
+        var mi = DIST[s.id][m.id], sp = speedOf(mi);
+        return '<option value="' + s.id + '"' + (d.assign[m.id] === s.id ? " selected" : "") + '>' + s.name + ' · ' + fmt(mi) + ' mi · ' + sp.label + ' · $' + (mi * env.freight).toFixed(2) + '/unit freight</option>';
+      }).join("");
+      return '<div class="lane"><b>' + m.name + '</b><select data-assign="' + m.id + '" aria-label="Warehouse serving ' + m.name + '">' + opts + '</select><div class="info" id="li-' + m.id + '"></div></div>';
+    }).join("");
+
+  var changedPanel = "";
+  if (prev) {
+    var same = evaluate(JSON.parse(JSON.stringify(d)), env, st.opened), lastP = prev.res.t.profit, nowP = same.t.profit, diff = nowP - lastP;
+    var fx = YEARS[y - 2].fx, why = [];
+    fx.forEach(function (f) {
+      if (f.type === "freight") why.push("freight is now " + pct(f.mult - 1) + " higher per mile");
+      if (f.type === "comp") why.push(mById(f.m).name + " is now a " + f.to + "-competition market");
+      if (f.type === "demand") why.push(mById(f.m).name + " demand is " + (f.mult > 1 ? "up " : "down ") + pct(Math.abs(f.mult - 1)));
+      if (f.type === "cost") why.push(f.s.map(function (id) { return sById(id).name; }).join(" and ") + " handling costs $" + f.add + " more per unit");
+    });
+    if (prev.res.t.opening > 0) why.push("sites opened last year no longer pay the one-time opening cost (saves " + money(prev.res.t.opening) + ")");
+    why.push("promotion pushes reset: last year's pushes are not carried over");
+    var fresh = availM(y).filter(function (m) { return m.from === y; }).map(function (m) { return m.name + " market"; }).concat(availS(y).filter(function (s) { return s.from === y; }).map(function (s) { return s.name + ", " + s.st + " site"; }));
+    if (fresh.length) why.push("new this year: " + fresh.join(", "));
+    changedPanel = '<div class="panel" style="border-left:8px solid var(--accent)"><span class="label">What changed since year ' + (y - 1) + '</span>' +
+      '<p>Your year ' + (y - 1) + ' plan made <b class="' + (lastP >= 0 ? "pos" : "neg") + '">' + money(lastP) + '</b>. Left exactly as it is, it would make <b class="' + (nowP >= 0 ? "pos" : "neg") + '">' + money(nowP) + '</b> this year (' + (diff >= 0 ? "+" : "−") + money(Math.abs(diff)).replace(/^[−$]+/, "$") + ', before this year\'s event).</p>' +
+      '<ul class="notes small">' + why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join("") + '</ul>' +
+      '<p class="small muted">Every team faces the same changes. The question for this round: what do you keep, and what do you change?</p></div>';
+  }
+  $app.innerHTML = '<div class="wrap">' + teamBar() +
+    '<div class="news"><span class="label">Year ' + y + ' news</span><p>' + esc(Y.news) + '</p></div>' +
+    changedPanel +
+    '<div id="map">' + mapSVG(d, env) + '</div>' +
+    '<div class="stack"><div class="stepno"><span class="n">1</span><h2>Markets · marketing</h2></div>' +
+      '<p class="small muted">Price $' + G.price + ' a unit. Share drops ' + pct(G.speed[1].pen) + ' with 2-day delivery and ' + pct(G.speed[2].pen) + ' with 3+ day delivery (over ' + G.speed[1].max + ' miles).</p>' +
+      '<div class="cards">' + mCards + '</div></div>' +
+    '<div class="stack"><div class="stepno"><span class="n">2</span><h2>Facilities · location</h2></div><div class="cards">' + sCards + '</div></div>' +
+    '<div class="stack"><div class="stepno"><span class="n">3</span><h2>Distribution · lanes</h2></div><div class="panel">' + lanes + '</div></div>' +
+    '<div class="panel" style="border:2px solid var(--ink)"><h3>Projected profit for year ' + y + '</h3><p class="small muted">Based on what you know now. This year\'s event is revealed after you lock in.</p><div id="warn"></div><div class="calc" id="calc"></div></div>' +
+    '<div id="lockbox"><button class="btn primary big" id="lock">Lock plan for year ' + y + '</button></div></div>';
+
+  function refresh() {
+    fixAssign(d); persistTeam();
+    var r = evaluate(d, env, st.opened), t = r.t, w = [];
+    r.sites.forEach(function (s) {
+      var u = document.getElementById("u-" + s.id), ut = document.getElementById("ut-" + s.id);
+      if (u) { u.className = "util" + (s.over ? " over" : ""); u.firstChild.style.width = Math.min(100, s.cap ? 100 * s.load / s.cap : 0) + "%"; }
+      if (ut) ut.textContent = s.on ? fmt(s.load) + " of " + fmt(s.cap) + " units planned" + (s.over ? " · over capacity" : "") : "Closed";
+      if (s.over) w.push(sById(s.id).name + " is over capacity: " + fmt(s.load - s.cap) + " units of demand will go unserved. Expand it, open another site or move a lane.");
+    });
+    r.rows.forEach(function (row) {
+      var li = document.getElementById("li-" + row.id);
+      if (li && row.site) li.textContent = "Share " + pct(row.share) + " → demand " + fmt(row.demand) + " · contribution " + money(row.contrib);
+      if (row.on && row.contrib < 0) w.push(row.name + " loses " + money(-row.contrib) + " after marketing, handling and freight.");
+    });
+    var unused = SITES.filter(function (s) { return d.sites[s.id] && !r.rows.some(function (row) { return row.site === s.id; }); });
+    unused.forEach(function (s) { w.push(s.name + " is open but serves no market. It still costs " + money(s.fixed) + " this year."); });
+    document.getElementById("warn").innerHTML = w.length ? '<div class="warn"><b>Check your plan</b><ul>' + w.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul></div>' : "";
+    document.getElementById("calc").innerHTML =
+      '<span>Revenue (' + fmt(t.sold) + ' units × $' + G.price + ')</span><span>' + money(t.revenue) + '</span>' +
+      '<span>Handling</span><span class="neg">' + money(-t.prod) + '</span>' +
+      '<span>Freight</span><span class="neg">' + money(-t.freight) + '</span>' +
+      '<span>Marketing</span><span class="neg">' + money(-t.mkt) + '</span>' +
+      '<span>Facility fixed costs</span><span class="neg">' + money(-t.fixed) + '</span>' +
+      '<span>Opening new sites</span><span class="neg">' + money(-t.opening) + '</span>' +
+      '<span class="tot">Projected net profit</span><span class="tot ' + (t.profit >= 0 ? "pos" : "neg") + '">' + money(t.profit) + '</span>';
+    document.getElementById("map").innerHTML = mapSVG(d, env);
+  }
+  function rerender() { var sy = window.scrollY; renderDecide(); window.scrollTo(0, sy); }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-mon]"), function (el) {
+    el.onchange = function () { var id = el.getAttribute("data-mon"); d.markets[id].on = el.checked; if (!el.checked) d.markets[id].push = false; fixAssign(d); persistTeam(); rerender(); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-mpush]"), function (el) {
+    el.onchange = function () { d.markets[el.getAttribute("data-mpush")].push = el.checked; persistTeam(); rerender(); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-site]"), function (el) {
+    el.onchange = function () { var id = el.getAttribute("data-site"); d.sites[id] = el.checked; if (!el.checked) d.expand[id] = false; fixAssign(d); persistTeam(); rerender(); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-expand]"), function (el) {
+    el.onchange = function () { d.expand[el.getAttribute("data-expand")] = el.checked; persistTeam(); rerender(); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-assign]"), function (el) {
+    el.onchange = function () { var id = el.getAttribute("data-assign"); d.assign[id] = el.value; d.manual = d.manual || {}; d.manual[id] = true; refresh(); };
+  });
+  function lockNow() {
+    TEAM.changed = !prev || !samePlan(prev.d, d);
+    if (TEAM.practice) return doResolve();
+    TEAM.phase = "locked"; persistTeam(); renderLocked(); window.scrollTo(0, 0);
+  }
+  on("lock", "click", function () {
+    if (prev && samePlan(prev.d, d)) {
+      document.getElementById("lockbox").innerHTML = '<div class="warn"><b>Your plan is identical to last year\'s.</b> Conditions have changed, and your instructor will see an "unchanged" mark on the dashboard. Is standing still really your decision?</div>' +
+        '<div class="row" style="margin-top:10px"><button class="btn ghost" id="lock-anyway">Yes, lock the same plan</button><button class="btn primary" id="lock-back">Go back and reconsider</button></div>';
+      on("lock-anyway", "click", lockNow);
+      on("lock-back", "click", function () { rerender(); });
+      return;
+    }
+    lockNow();
+  });
+  refresh();
+}
+
+function planLine(d) {
+  var ms = MARKETS.filter(function (m) { return d.markets[m.id].on; }).map(function (m) { return m.name + (d.markets[m.id].push ? " (push)" : ""); });
+  var ss = SITES.filter(function (s) { return d.sites[s.id]; }).map(function (s) { return s.name; });
+  return '<p><b>Markets:</b> ' + (ms.join(", ") || "none") + '</p><p><b>Sites:</b> ' + (ss.join(", ") || "none") + '</p>';
+}
+
+function renderLocked(err) {
+  var st = TEAM.st;
+  $app.innerHTML = '<div class="wrap">' + teamBar() +
+    '<div class="panel"><span class="label">Plan locked · year ' + st.y + '</span>' + planLine(TEAM.d) +
+    '<h2>Wait for the round code</h2><p class="muted">When every team has locked in, your instructor reveals what happened this year and shows a 3-digit code.</p>' +
+    '<label class="field" for="rc">Round code<input type="text" id="rc" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="000"></label>' +
+    (err ? '<p class="err">' + esc(err) + '</p>' : '') +
+    '<div class="row"><button class="btn primary big grow" id="rc-go">Reveal year ' + st.y + '</button><button class="btn ghost" id="edit">Change plan</button></div></div></div>';
+  var inp = document.getElementById("rc");
+  function tryCode() {
+    if (inp.value.trim() === roundCode(TEAM.game, st.y)) doResolve();
+    else renderLocked("That code doesn't match year " + st.y + ". Check the big screen, and check that your game code is " + TEAM.game + ".");
+  }
+  on("rc-go", "click", tryCode);
+  inp.addEventListener("keydown", function (e) { if (e.key === "Enter") tryCode(); });
+  on("edit", "click", function () { TEAM.phase = "decide"; persistTeam(); renderDecide(); });
+  if (!err) inp.focus();
+}
+
+function doResolve() {
+  var y = TEAM.st.y;
+  TEAM.last = playYear(TEAM.st, TEAM.d);
+  TEAM.lastY = y;
+  TEAM.d = JSON.parse(JSON.stringify(TEAM.d)); // next year starts from this plan
+  MARKETS.forEach(function (m) { TEAM.d.markets[m.id].push = false; }); // but promotion pushes are bought year by year
+  TEAM.phase = "result"; persistTeam(); renderResult(); window.scrollTo(0, 0);
+}
+
+function marketTable(res) {
+  var rows = res.rows.filter(function (r) { return r.on; });
+  if (!rows.length) return '<p class="muted">You sold in no markets this year.</p>';
+  return '<div class="scroll"><table><thead><tr><th>Market</th><th>From</th><th class="n">Share</th><th class="n">Sold</th><th class="n">Lost</th><th class="n">Contribution</th></tr></thead><tbody>' +
+    rows.map(function (r) {
+      return '<tr><td><b>' + r.name + '</b>' + (r.push ? ' <span class="small muted">push</span>' : '') + '</td><td>' + (r.site ? sById(r.site).name + '<br><span class="small muted mono">' + fmt(r.miles) + ' mi · ' + r.speed.label + '</span>' : '—') + '</td>' +
+        '<td class="n">' + pct(r.share) + '</td><td class="n">' + fmt(r.sold) + '</td><td class="n' + (r.lost ? " neg" : "") + '">' + fmt(r.lost) + '</td><td class="n' + (r.contrib < 0 ? " neg" : "") + '">' + money(r.contrib) + '</td></tr>';
+    }).join("") + '</tbody></table></div>';
+}
+function pnl(t, label) {
+  return '<div class="calc"><span>Revenue</span><span>' + money(t.revenue) + '</span><span>Handling</span><span class="neg">' + money(-t.prod) + '</span>' +
+    '<span>Freight</span><span class="neg">' + money(-t.freight) + '</span><span>Marketing</span><span class="neg">' + money(-t.mkt) + '</span>' +
+    '<span>Facility fixed costs</span><span class="neg">' + money(-t.fixed) + '</span><span>Opening new sites</span><span class="neg">' + money(-t.opening) + '</span>' +
+    '<span class="tot">' + label + '</span><span class="tot ' + (t.profit >= 0 ? "pos" : "neg") + '">' + money(t.profit) + '</span></div>';
+}
+
+function renderResult() {
+  var res = TEAM.last, y = TEAM.lastY, Y = YEARS[y - 1], st = TEAM.st;
+  var code = TEAM.practice ? null : reportCode(TEAM.game, TEAM.n, y, res.t.profit, TEAM.changed !== false);
+  $app.innerHTML = '<div class="wrap">' + teamBar() +
+    '<div class="event"><span class="label">Year ' + y + ' · what happened</span><h2>' + esc(Y.title) + '</h2><p>' + esc(Y.event) + '</p></div>' +
+    (code ? '<div class="panel" style="align-items:center;text-align:center;border:2px solid var(--accent)"><span class="label">Report code · show or read this to your instructor</span><div class="report">' + code + '</div><span class="small muted">Team ' + TEAM.n + ' · year ' + y + ' · ' + money(res.t.profit) + '</span></div>' : '') +
+    '<div class="panel">' + pnl(res.t, "Year " + y + " net profit") + '</div>' +
+    '<div class="panel"><h3>By market</h3>' + marketTable(res) + '</div>' +
+    '<button class="btn primary big" id="next">' + (st.done ? "See final results" : "Plan year " + st.y) + '</button></div>';
+  on("next", "click", function () { TEAM.phase = st.done ? "done" : "decide"; persistTeam(); renderTeam(); window.scrollTo(0, 0); });
+}
+
+function renderFinal() {
+  var st = TEAM.st;
+  $app.innerHTML = '<div class="wrap">' + topbar('<span class="chip">Team <b>' + TEAM.n + '</b></span><span class="chip">Final</span>') +
+    '<div class="panel" style="border:2px solid var(--ink)"><span class="label">Total net profit · 4 years</span><div class="report" style="letter-spacing:0">' + money(st.total) + '</div></div>' +
+    '<div class="panel"><h3>Year by year</h3><div class="scroll"><table><thead><tr><th>Year</th><th>Markets</th><th>Sites</th><th class="n">Profit</th>' + (TEAM.practice ? '' : '<th>Report code</th>') + '</tr></thead><tbody>' +
+    st.hist.map(function (h) {
+      return '<tr><td class="mono">' + h.y + '</td><td>' + MARKETS.filter(function (m) { return h.d.markets[m.id].on; }).map(function (m) { return m.id; }).join(", ") + '</td><td>' +
+        SITES.filter(function (s) { return h.d.sites[s.id]; }).map(function (s) { return s.name; }).join(", ") + '</td><td class="n' + (h.res.t.profit < 0 ? " neg" : "") + '">' + money(h.res.t.profit) + '</td>' +
+        (TEAM.practice ? '' : '<td class="mono">' + reportCode(TEAM.game, TEAM.n, h.y, h.res.t.profit, h.changed !== false) + '</td>') + '</tr>';
+    }).join("") + '</tbody></table></div></div>' +
+    '<div class="panel"><h3>Your final network</h3>' + mapSVG(st.hist[st.hist.length - 1].d, envFor(G.years)) + '</div>' +
+    '<button class="btn ghost" id="reset">Start a new game on this device</button><div id="confirm"></div></div>';
+  on("reset", "click", function () {
+    document.getElementById("confirm").innerHTML = '<div class="panel sunk"><p>This erases this team\'s results on this device.</p><div class="row"><button class="btn primary" id="yes">Erase and start over</button><button class="btn ghost" id="no">Keep results</button></div></div>';
+    on("yes", "click", function () { TEAM = null; forget("nb-team"); go("team"); });
+    on("no", "click", function () { document.getElementById("confirm").innerHTML = ""; });
+  });
+}
+
+// ---------- Host ----------
+function renderHost() {
+  persistHost();
+  var tabs = [["run", "Run years"], ["dash", "Profit dashboard"], ["debrief", "Debrief"], ["guide", "How to run it"]];
+  $app.innerHTML = '<div class="wrap wide">' + topbar('<span class="chip">Game code <b style="font-size:16px">' + HOST.game + '</b></span><a class="chip" href="#">Exit</a>') +
+    '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button class="tab" role="tab" data-t="' + t[0] + '" aria-selected="' + (hostTab === t[0]) + '">' + t[1] + '</button>'; }).join("") + '</div><div id="hostbody"></div></div>';
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (b) { b.onclick = function () { clearInterval(timerHandle); hostTab = b.getAttribute("data-t"); renderHost(); }; });
+  ({ run: hostRun, dash: hostDash, debrief: hostDebrief, guide: hostGuide })[hostTab]();
+}
+
+function hostRun() {
+  var y = HOST.y, Y = YEARS[y - 1], body = document.getElementById("hostbody");
+  body.innerHTML = '<div class="grid2"><div class="stack" style="gap:16px">' +
+    '<div class="row"><h2 class="grow">Year ' + y + ' of ' + G.years + '</h2><button class="btn ghost" id="prev"' + (y === 1 ? " disabled" : "") + '>Previous year</button><button class="btn" id="nexty"' + (y === G.years ? " disabled" : "") + '>Next year</button></div>' +
+    '<div class="news"><span class="label">News teams see now</span><p style="font-size:21px">' + esc(Y.news) + '</p></div>' +
+    (HOST.revealed ? '<div class="event"><span class="label">Revealed · year ' + y + '</span><h2 style="font-size:42px">' + esc(Y.title) + '</h2><p style="font-size:20px">' + esc(Y.event) + '</p></div>'
+      : '<div class="panel sunk"><p class="muted">Teams plan and lock in. When everyone is locked, reveal the year. Teams then type the round code, see their results and get a report code for the dashboard.</p><button class="btn primary big" id="reveal">Reveal year ' + y + '</button></div>') +
+    mapSVG(null, envFor(HOST.revealed ? y : y - 1)) + '</div>' +
+    '<div class="stack" style="gap:16px">' +
+      '<div class="panel" style="align-items:center;text-align:center"><span class="label">Join with game code</span><div class="code-big" style="font-size:clamp(52px,8vw,92px)">' + HOST.game + '</div></div>' +
+      '<div class="panel" style="align-items:center;text-align:center"><span class="label">Round code · year ' + y + '</span>' +
+        (HOST.revealed ? '<div class="code-big">' + roundCode(HOST.game, y) + '</div>' : '<div class="code-big muted" style="opacity:.3">···</div><p class="small muted">Appears when you reveal the year.</p>') + '</div>' +
+      '<div class="panel" style="align-items:center;text-align:center"><span class="label">Planning timer</span><div class="timer" id="timer">--:--</div>' +
+        '<div class="row" style="justify-content:center"><button class="btn ghost" data-min="5">5 min</button><button class="btn ghost" data-min="8">8 min</button><button class="btn ghost" data-min="10">10 min</button><button class="btn ghost" id="tstop">Stop</button></div></div>' +
+    '</div></div>';
+  on("prev", "click", function () { HOST.y--; HOST.revealed = true; persistHost(); hostRun(); });
+  on("nexty", "click", function () { HOST.y++; HOST.revealed = false; HOST.timerEnd = null; persistHost(); hostRun(); });
+  on("reveal", "click", function () { HOST.revealed = true; HOST.timerEnd = null; persistHost(); hostRun(); });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-min]"), function (b) { b.onclick = function () { HOST.timerEnd = Date.now() + Number(b.getAttribute("data-min")) * 60000; persistHost(); tick(); }; });
+  on("tstop", "click", function () { HOST.timerEnd = null; persistHost(); tick(); });
+  tick();
+}
+function tick() {
+  clearInterval(timerHandle);
+  function upd() {
+    var el = document.getElementById("timer");
+    if (!el) { clearInterval(timerHandle); return; }
+    if (!HOST.timerEnd) { el.textContent = "--:--"; el.className = "timer"; return; }
+    var ms = Math.max(0, HOST.timerEnd - Date.now()), sec = Math.ceil(ms / 1000);
+    el.textContent = Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+    el.className = "timer" + (sec <= 60 ? " low" : "");
+    if (ms <= 0) clearInterval(timerHandle);
+  }
+  upd(); timerHandle = setInterval(upd, 250);
+}
+
+var lastAdded = null;
+function hostDash(msg) {
+  var R = HOST.results, teams = Object.keys(R).map(Number).sort(function (a, b) { return a - b; });
+  var totals = teams.map(function (n) { var tot = 0, k = 0; for (var y = 1; y <= G.years; y++) if (R[n][y] != null) { tot += R[n][y]; k++; } return { n: n, tot: tot, k: k }; });
+  var ranked = totals.slice().sort(function (a, b) { return b.tot - a.tot; });
+  var rank = {}; ranked.forEach(function (t, i) { rank[t.n] = i + 1; });
+  var reported = []; for (var y = 1; y <= G.years; y++) reported.push(teams.filter(function (n) { return R[n][y] != null; }).length);
+  var maxAbs = Math.max(1, Math.max.apply(null, totals.map(function (t) { return Math.abs(t.tot); })));
+  var hasNeg = totals.some(function (t) { return t.tot < 0; });
+  var zero = hasNeg ? 30 : 0;
+
+  var table = !teams.length ? '<p class="empty">No reports yet. After each reveal, type each team\'s 8-character report code on the right. Each code fills that team\'s cell for that year.</p>' :
+    '<div class="scroll"><table class="dash"><thead><tr><th>Rank</th><th>Team</th>' + YEARS.map(function (_, i) { return '<th class="n">Year ' + (i + 1) + '</th>'; }).join("") + '<th class="n">Total</th></tr></thead><tbody>' +
+    ranked.map(function (t) {
+      return '<tr class="' + (rank[t.n] <= 3 ? "top" : "") + '"><td class="mono">' + rank[t.n] + '</td><td><b>Team ' + t.n + '</b></td>' +
+        YEARS.map(function (_, i) {
+          var v = R[t.n][i + 1], fl = lastAdded && lastAdded.team === t.n && lastAdded.y === i + 1, un = HOST.unchanged && HOST.unchanged[t.n] && HOST.unchanged[t.n][i + 1];
+          return '<td class="n' + (v != null && v < 0 ? " neg" : "") + (fl ? " flash" : "") + '"' + (un ? ' title="Same plan as the year before"' : '') + '>' + (v == null ? '<span class="empty">·</span>' : kmoney(v) + (un ? ' <span class="badge plain" style="font-size:9px;padding:1px 4px">same</span>' : '')) + '</td>';
+        }).join("") + '<td class="n' + (t.tot < 0 ? " neg" : "") + '"><b>' + kmoney(t.tot) + '</b></td></tr>';
+    }).join("") + '</tbody></table></div>';
+
+  var bars = ranked.map(function (t) {
+    var w = Math.abs(t.tot) / maxAbs * (100 - zero), left = t.tot >= 0 ? zero : zero - Math.abs(t.tot) / maxAbs * zero;
+    if (t.tot < 0) w = Math.abs(t.tot) / maxAbs * zero;
+    return '<div class="hb"><span>Team ' + t.n + '</span><div class="track"><i class="' + (t.tot < 0 ? "neg" : "") + '" style="left:' + left + '%;width:' + w + '%"></i></div><span class="v">' + kmoney(t.tot) + '</span></div>';
+  }).join("");
+
+  document.getElementById("hostbody").innerHTML = '<div class="grid2"><div class="stack" style="gap:16px">' +
+      '<div class="panel"><div class="row"><h2 class="grow">Net profit by team and year</h2><span class="chip">' + teams.length + ' teams</span></div>' + table +
+      '<p class="small muted mono">Reports in: ' + reported.map(function (c, i) { return 'Y' + (i + 1) + ' ' + c; }).join(" · ") + '</p>' +
+      '<p class="small muted">A <b>same</b> tag means the team locked exactly the same plan as the year before.</p>' +
+      (teams.length ? '<div class="row"><button class="btn ghost sm" id="csv">Download results as CSV</button></div>' : '') + '</div>' +
+      (teams.length ? '<div class="panel"><h3>Cumulative profit</h3><div class="hbars">' + bars + '</div></div>' : '') +
+    '</div><div class="stack" style="gap:16px">' +
+      '<div class="panel"><h3>Enter a report code</h3><label class="field" for="rcode">8-character code from a team\'s screen<input type="text" id="rcode" maxlength="9" autocomplete="off" placeholder="XXXX-XXXX" style="text-transform:uppercase;font-size:22px"></label>' +
+        '<button class="btn primary" id="radd">Add</button><div id="rmsg">' + (msg || "") + '</div>' +
+        '<p class="small muted">The code holds the team number, year and profit, and only works with your game code. Press Enter after each one. Entering a code again for the same team and year replaces it.</p></div>' +
+      '<div class="panel sunk"><h3>Fix a mistake</h3><div class="row"><input type="text" id="cl-team" inputmode="numeric" placeholder="Team" style="width:90px"><input type="text" id="cl-year" inputmode="numeric" placeholder="Year" style="width:90px"><button class="btn ghost" id="cl-go">Clear cell</button></div></div>' +
+    '</div></div>';
+  var inp = document.getElementById("rcode");
+  function add() {
+    var r = readReport(HOST.game, inp.value);
+    if (!r) return hostDash('<p class="err">That code isn\'t valid for game ' + HOST.game + '. Check for a typo, or check that the team joined with this game code.</p>');
+    HOST.results[r.team] = HOST.results[r.team] || {};
+    HOST.results[r.team][r.y] = r.profit;
+    HOST.unchanged = HOST.unchanged || {}; HOST.unchanged[r.team] = HOST.unchanged[r.team] || {};
+    HOST.unchanged[r.team][r.y] = !r.changed; persistHost();
+    lastAdded = { team: r.team, y: r.y };
+    hostDash('<p class="pos"><b>Team ' + r.team + ', year ' + r.y + ': ' + money(r.profit) + '</b></p>');
+    document.getElementById("rcode").focus();
+  }
+  on("radd", "click", add);
+  on("csv", "click", function () {
+    var lines = ["team,year1,year2,year3,year4,total,unchanged_years"];
+    totals.forEach(function (t) {
+      var cells = []; for (var y = 1; y <= G.years; y++) cells.push(R[t.n][y] != null ? R[t.n][y] : "");
+      var un = []; for (var y2 = 1; y2 <= G.years; y2++) if (HOST.unchanged && HOST.unchanged[t.n] && HOST.unchanged[t.n][y2]) un.push(y2);
+      lines.push([t.n].concat(cells, [t.tot, un.join(" ")]).join(","));
+    });
+    var a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(lines.join("\n")); a.download = "network-builder-" + HOST.game + ".csv"; document.body.appendChild(a); a.click(); a.remove();
+  });
+  inp.addEventListener("keydown", function (e) { if (e.key === "Enter") add(); });
+  on("cl-go", "click", function () {
+    var t = parseInt(document.getElementById("cl-team").value, 10), y = parseInt(document.getElementById("cl-year").value, 10);
+    if (HOST.results[t] && HOST.results[t][y] != null) { delete HOST.results[t][y]; if (HOST.unchanged && HOST.unchanged[t]) delete HOST.unchanged[t][y]; if (!Object.keys(HOST.results[t]).length) delete HOST.results[t]; persistHost(); hostDash('<p class="muted">Cleared team ' + t + ', year ' + y + '.</p>'); }
+    else hostDash('<p class="err">Nothing recorded for that team and year.</p>');
+  });
+  inp.focus();
+}
+
+// Benchmarks: best network kept for all 4 years, plus two simple plans
+var BENCH = null;
+function decisionFor(siteIds, marketIds, pushAll) {
+  var d = blankDecision();
+  siteIds.forEach(function (s) { d.sites[s] = true; });
+  marketIds.forEach(function (m) { d.markets[m].on = true; d.markets[m].push = !!pushAll; });
+  return fixAssign(d);
+}
+function playFixed(d) { var st = newTeamGame(); while (!st.done) playYear(st, JSON.parse(JSON.stringify(d))); return st; }
+function computeBench() {
+  if (BENCH) return BENCH;
+  var best = {}, allM = MARKETS.map(function (m) { return m.id; }), NS = SITES.length, NM = MARKETS.length;
+  for (var sm = 1; sm < (1 << NS); sm++) {
+    var sites = SITES.filter(function (s, i) { return sm >> i & 1; }).map(function (s) { return s.id; });
+    var k = sites.length; if (k > 3) continue;
+    for (var mm = 1; mm < (1 << NM); mm++) {
+      var mk = MARKETS.filter(function (m, i) { return mm >> i & 1; }).map(function (m) { return m.id; });
+      [false, true].forEach(function (p) {
+        var st = playFixed(decisionFor(sites, mk, p));
+        if (!best[k] || st.total > best[k].total) best[k] = { total: st.total, sites: sites, mk: mk, push: p, hist: st.hist };
+      });
+    }
+  }
+  function describe(b) {
+    return SITES.filter(function (s) { return b.sites.indexOf(s.id) >= 0; }).map(function (s) { return s.name; }).join(" + ") + " serving " +
+      (b.mk.length === MARKETS.length ? "every market as it becomes available" : b.mk.map(function (id) { return mById(id).name; }).join(", ")) + (b.push ? ", push in each" : ", no push") + ". Sites and markets count only from the year they become available.";
+  }
+  var central = playFixed(decisionFor(["MKC"], allM, false));
+  BENCH = [ { name: "One central warehouse", desc: "Kansas City serves every market, no push.", st: central } ];
+  [1, 2, 3].forEach(function (k) { BENCH.push({ name: "Best fixed plan, " + k + " site" + (k > 1 ? "s" : ""), desc: describe(best[k]), st: { total: best[k].total, hist: best[k].hist } }); });
+  return BENCH;
+}
+function hostDebrief() {
+  var B = computeBench();
+  document.getElementById("hostbody").innerHTML = '<div class="stack" style="gap:16px">' +
+    '<div class="panel"><h2>The four years</h2><div class="scroll"><table><thead><tr><th>Year</th><th>News before deciding</th><th>What happened</th></tr></thead><tbody>' +
+      YEARS.map(function (Y, i) { return '<tr><td class="mono">' + (i + 1) + '</td><td>' + esc(Y.news) + '</td><td><b>' + esc(Y.title) + '.</b> ' + esc(Y.event) + '</td></tr>'; }).join("") + '</tbody></table></div></div>' +
+    '<div class="grid2"><div class="panel"><h3>Benchmark plans</h3><p class="small muted">Computer plans that keep one network for all four years (no expansion), found by testing every combination of up to three sites. Compare your teams\' totals.</p><div class="scroll"><table><thead><tr><th>Plan</th>' + YEARS.map(function (_, i) { return '<th class="n">Y' + (i + 1) + '</th>'; }).join("") + '<th class="n">Total</th></tr></thead><tbody>' +
+      B.map(function (b) { return '<tr><td><b>' + b.name + '</b><br><span class="small muted">' + esc(b.desc) + '</span></td>' + b.st.hist.map(function (h) { return '<td class="n' + (h.res.t.profit < 0 ? " neg" : "") + '">' + kmoney(h.res.t.profit) + '</td>'; }).join("") + '<td class="n"><b>' + kmoney(b.st.total) + '</b></td></tr>'; }).join("") +
+      '</tbody></table></div><p class="small muted">Teams that adapted their network after the fuel shock and the western wage rise can beat the best plan that never changes.</p></div>' +
+    '<div class="panel"><h3>Discussion questions</h3><ol class="steps">' +
+      '<li>Which markets did you skip, and why? Was the reason demand, competition or the cost to serve it?</li>' +
+      '<li>How did marketing and operations disagree inside your team? Who won each argument?</li>' +
+      '<li>When was a promotion push worth it? Did it ever push a warehouse over capacity?</li>' +
+      '<li>One central warehouse versus several regional ones: what did you trade off between fixed cost, freight and delivery speed?</li>' +
+      '<li>How did the fuel shock change the value of being close to customers?</li>' +
+      '<li>Did anyone open a site and close it later? What did that cost, and what does it say about how hard location decisions are to reverse?</li>' +
+      '<li>When a new site (Fort Worth) or a new market (Denver) appeared, did you re-evaluate your whole network or just bolt it on?</li>' +
+      '<li>Expand an existing site or open a new one: when did each make sense?</li>' +
+      '<li>Where else do slow delivery times cost sales in the real world?</li>' +
+    '</ol></div></div>' +
+    '<div class="panel sunk"><h3>Key ideas to land</h3><p>Market selection is an operations decision as well as a marketing one: a big market far from your network can lose money once freight and slower delivery are counted. Facilities carry fixed costs that only pay off with enough volume nearby. More sites lower freight and speed up delivery but add fixed cost. Capacity ties the two functions together, because a marketing push only pays if a warehouse can ship the extra units. Location decisions are expensive to reverse, so they should hold up across several possible futures.</p></div></div>';
+}
+
+function hostGuide() {
+  document.getElementById("hostbody").innerHTML = '<div class="grid2"><div class="panel"><h2>Running it with a big class</h2><ol class="steps">' +
+      '<li><b>Before class:</b> upload this HTML file to your LMS or a web folder and share the link (QR code or chat). Play one practice run to learn the screens.</li>' +
+      '<li><b>Teams:</b> about 20 to 25 teams of 5 to 7, each with one phone or laptop. Give every team a number. Suggested roles: marketing lead, operations lead, logistics planner, finance lead.</li>' +
+      '<li><b>Join (5 min):</b> project this console. Teams tap "Join as a team" and enter their team number and the game code.</li>' +
+      '<li><b>Briefing (10 min):</b> walk through the map, the three decisions and the projected profit panel.</li>' +
+      '<li><b>Each year (12 to 15 min):</b> read the news, start the timer (8 min for year 1, 5 to 6 after that), then click Reveal. Teams type the round code and see results with an 8-character report code.</li>' +
+      '<li><b>Collect reports:</b> a TA or you types each team\'s report code into the Profit dashboard tab. Teams can read it out, write it on the board, or walk up with their screen. About 20 codes take 2 to 3 minutes. Show the dashboard on the projector before the next year.</li>' +
+      '<li><b>Debrief (20 to 25 min):</b> use the Debrief tab.</li></ol>' +
+      '<p class="small muted">Total: about 90 minutes for 4 years, or up to 2 hours with a longer debrief.</p></div>' +
+    '<div class="stack" style="gap:16px"><div class="panel"><h3>Good to know</h3><ul class="notes">' +
+      '<li>Students don\'t need accounts. Each team\'s game is saved in its own browser, so keep the same device and tab. A reload brings the game back.</li>' +
+      '<li>Each year\'s plan carries into the next year, but promotion pushes reset, a new site opens in year 2 (Dallas), a new market opens in year 3 (Denver), and every site can be expanded. Teams that lock an identical plan get a "same" tag on the dashboard.</li>' +
+      '<li>Hosting: this is one HTML file with no server. Put it on your LMS or any web folder, or hand it to students as a file. It also works offline once opened.</li>' +
+      '<li>Round codes depend on your game code, so teams can\'t run ahead. Report codes only work with your game code, so they can\'t be invented.</li>' +
+      '<li>Every team faces the same events, so profits are comparable.</li>' +
+      '<li>This console remembers the game code, the current year and the dashboard on this device only. Run the dashboard from one computer.</li></ul></div>' +
+      '<div class="panel"><h3>New game code</h3><p class="small muted">Use a fresh code for each section. This also clears the dashboard and goes back to year 1.</p><div id="newcode"><button class="btn" id="nc">Start a new game code</button></div></div>' +
+      '<div class="panel sunk"><h3>The rules in numbers</h3><p class="small">Price $' + G.price + '. Share: ' + pct(G.share.low) + ' in low-competition markets, ' + pct(G.share.high) + ' in high, +' + pct(G.push) + ' with a push (costs ' + pct(G.pushCost) + ' of that market\'s marketing budget extra). Delivery over ' + G.speed[0].max + ' miles loses ' + pct(G.speed[1].pen) + ' share, over ' + G.speed[1].max + ' miles ' + pct(G.speed[2].pen) + '. Freight $' + G.freight + ' per unit per mile. Opening a site costs $' + fmt(G.open) + ' once; fixed costs are paid every year a site is open. Expanding a site adds ' + pct(G.expCap - 1) + ' capacity for ' + pct(G.expCost) + ' of its fixed cost each year. A site over capacity ships the same share of each market\'s demand and the rest is lost.</p></div></div></div>';
+  on("nc", "click", function () {
+    document.getElementById("newcode").innerHTML = '<div class="row"><button class="btn primary" id="ncy">Yes, new code and clear the dashboard</button><button class="btn ghost" id="ncn">Cancel</button></div>';
+    on("ncy", "click", function () { HOST = { game: newHostCode(), y: 1, revealed: false, timerEnd: null, results: {}, unchanged: {} }; persistHost(); hostTab = "run"; renderHost(); });
+    on("ncn", "click", hostGuide);
+  });
+}
+
+route();
+</script>
+
+</body></html>
